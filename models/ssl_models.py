@@ -20,16 +20,6 @@ import torch.nn as nn
 from lightning.pytorch import Trainer
 from omegaconf import DictConfig
 
-# Import from nemo (core dependencies - these are required)
-from nemo.collections.asr.data import audio_to_text_dataset
-from nemo.collections.asr.data.audio_to_text_dali import DALIOutputs
-from nemo.collections.asr.data.audio_to_text_lhotse import LhotseSpeechToTextBpeDataset
-from nemo.collections.asr.parts.mixins import ASRModuleMixin
-from nemo.collections.asr.parts.preprocessing.perturb import process_augmentations
-from nemo.collections.common.data.lhotse import get_lhotse_dataloader_from_config
-from nemo.collections.common.data.utils import move_data_to_device
-from nemo.collections.common.parts.preprocessing.parsers import make_parser
-
 # Import from local modules (project-specific code)
 import sys
 import os
@@ -38,13 +28,17 @@ project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
-# Import local SSL modules
+# Import local modules
 from data import ssl_dataset
+from data import audio_to_text_dataset
 from modules.ssl_modules.masking import ConvFeatureMaksingWrapper
-from nemo.core.classes import ModelPT
-from nemo.core.classes.common import PretrainedModelInfo, typecheck
-from nemo.core.classes.mixins import AccessMixin, set_access_cfg
-from nemo.core.neural_types import (
+from parts.mixins import ASRModuleMixin
+from parts.preprocessing.perturb import process_augmentations
+from common.parts.preprocessing.parsers import make_parser
+from core.classes import ModelPT
+from core.classes.common import PretrainedModelInfo, typecheck
+from core.classes.mixins import AccessMixin, set_access_cfg
+from core.neural_types import (
     AcousticEncodedRepresentation,
     AudioSignal,
     LabelsType,
@@ -53,7 +47,7 @@ from nemo.core.neural_types import (
     NeuralType,
     SpectrogramType,
 )
-from nemo.utils import logging
+from utils.logging import get_logger as logging
 
 __all__ = ['SpeechEncDecSelfSupervisedModel', 'EncDecMaskedTokenPredModel', 'EncDecDenoiseMaskedTokenPredModel']
 
@@ -532,7 +526,8 @@ class SpeechEncDecSelfSupervisedModel(ModelPT, ASRModuleMixin, AccessMixin):
     # PTL-specific methods
     def training_step(self, batch, batch_nb):
         signal, signal_len, targets, target_lengths = batch
-        if isinstance(batch, DALIOutputs) and batch.has_processed_signal:
+        # Simplified: DALI support removed
+        if False:  # isinstance(batch, DALIOutputs) and batch.has_processed_signal:
             spectrograms, spec_masks, encoded, encoded_len = self.forward(
                 processed_signal=signal,
                 processed_signal_length=signal_len,
@@ -578,7 +573,8 @@ class SpeechEncDecSelfSupervisedModel(ModelPT, ASRModuleMixin, AccessMixin):
         self._in_validation_step = True
 
         signal, signal_len, targets, target_lengths = batch
-        if isinstance(batch, DALIOutputs) and batch.has_processed_signal:
+        # Simplified: DALI support removed
+        if False:  # isinstance(batch, DALIOutputs) and batch.has_processed_signal:
             spectrograms, spec_masks, encoded, encoded_len = self.forward(
                 processed_signal=signal,
                 processed_signal_length=signal_len,
@@ -629,7 +625,8 @@ class EncDecMaskedTokenPredModel(SpeechEncDecSelfSupervisedModel):
         """
         PTL hook: https://pytorch-lightning.readthedocs.io/en/latest/common/lightning_module.html#transfer-batch-to-device
         """
-        batch = move_data_to_device(batch, device)
+        # Simplified: move_data_to_device removed - batch should already be on correct device
+        # batch = move_data_to_device(batch, device)
         return batch
 
     @classmethod
@@ -756,7 +753,8 @@ class EncDecMaskedTokenPredModel(SpeechEncDecSelfSupervisedModel):
 
     def training_step(self, batch, batch_idx=0):
         input_signal, input_signal_length = batch[0], batch[1]
-        if isinstance(batch, DALIOutputs) and batch.has_processed_signal:
+        # Simplified: DALI support removed
+        if False:  # isinstance(batch, DALIOutputs) and batch.has_processed_signal:
             log_probs, encoded_len, masks, tokens = self.forward(
                 processed_signal=input_signal, processed_signal_length=input_signal_length, apply_mask=True
             )
@@ -777,7 +775,8 @@ class EncDecMaskedTokenPredModel(SpeechEncDecSelfSupervisedModel):
 
     def inference_pass(self, batch, batch_idx=0, dataloader_idx=0, mode='val', apply_mask=False):
         input_signal, input_signal_length = batch[0], batch[1]
-        if isinstance(batch, DALIOutputs) and batch.has_processed_signal:
+        # Simplified: DALI support removed
+        if False:  # isinstance(batch, DALIOutputs) and batch.has_processed_signal:
             log_probs, encoded_len, masks, tokens = self.forward(
                 processed_signal=input_signal, processed_signal_length=input_signal_length, apply_mask=apply_mask
             )
@@ -864,16 +863,9 @@ class EncDecDenoiseMaskedTokenPredModel(EncDecMaskedTokenPredModel):
     def _setup_dataloader_from_config(self, config: Optional[Dict]):
         audio_to_text_dataset.inject_dataloader_value_from_model_config(self.cfg, config, key='sample_rate')
 
-        if config.get("use_lhotse"):
-            return get_lhotse_dataloader_from_config(
-                config,
-                global_rank=self.global_rank,
-                world_size=self.world_size,
-                dataset=ssl_dataset.LhotseAudioNoiseDataset(
-                    noise_manifest=config.get('noise_manifest', None),
-                    batch_augmentor_cfg=config.get('batch_augmentor', None),
-                ),
-            )
+        # Simplified: Lhotse support removed
+        if config.get("use_lhotse", False):
+            logging.warning("Lhotse dataset support is not available in simplified version. Using regular dataset.")
 
         dataset = ssl_dataset.get_audio_noise_dataset_from_config(
             config,

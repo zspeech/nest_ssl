@@ -12,10 +12,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from core.classes.model_pt import ModelPT
-from core.classes.neural_module import NeuralModule
-from core.classes.loss import Loss
-from core.classes.common import typecheck, PretrainedModelInfo
+"""
+Loss base class to replace nemo.core.classes.loss.Loss
+"""
 
-__all__ = ['ModelPT', 'NeuralModule', 'Loss', 'typecheck', 'PretrainedModelInfo']
+import torch
+
+from core.classes.common import Serialization, Typing
+
+__all__ = ['Loss']
+
+
+class Loss(torch.nn.modules.loss._Loss, Typing, Serialization):
+    """Inherit this class to implement custom loss."""
+    
+    def __init__(self, **kwargs):
+        super(Loss, self).__init__(**kwargs)
 

@@ -16,10 +16,10 @@
 import lightning.pytorch as pl
 from omegaconf import OmegaConf
 
-# Import from nemo (core dependencies)
-from nemo.core.config import hydra_runner
-from nemo.utils import logging
-from nemo.utils.exp_manager import exp_manager
+# Import local utilities
+from utils.hydra_runner import hydra_runner
+from utils.logging import get_logger as logging
+from utils.exp_manager import exp_manager
 
 # Import local model
 import sys

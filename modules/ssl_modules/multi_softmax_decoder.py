@@ -17,9 +17,36 @@ from collections import OrderedDict
 
 import torch
 
-from nemo.collections.asr.parts.submodules.jasper import init_weights
-from nemo.core.classes import NeuralModule, typecheck
-from nemo.core.neural_types import AcousticEncodedRepresentation, LogprobsType, NeuralType
+import torch
+from core.classes.neural_module import NeuralModule
+from core.classes.common import typecheck
+from core.neural_types import AcousticEncodedRepresentation, LogprobsType, NeuralType
+
+# Simple weight initialization function
+def init_weights(m, mode='xavier_uniform'):
+    """Initialize weights for a module."""
+    if isinstance(m, torch.nn.Linear):
+        if mode == 'xavier_uniform':
+            torch.nn.init.xavier_uniform_(m.weight)
+        elif mode == 'xavier_normal':
+            torch.nn.init.xavier_normal_(m.weight)
+        elif mode == 'kaiming_uniform':
+            torch.nn.init.kaiming_uniform_(m.weight)
+        elif mode == 'kaiming_normal':
+            torch.nn.init.kaiming_normal_(m.weight)
+        if m.bias is not None:
+            torch.nn.init.constant_(m.bias, 0)
+    elif isinstance(m, torch.nn.Conv1d):
+        if mode == 'xavier_uniform':
+            torch.nn.init.xavier_uniform_(m.weight)
+        elif mode == 'xavier_normal':
+            torch.nn.init.xavier_normal_(m.weight)
+        elif mode == 'kaiming_uniform':
+            torch.nn.init.kaiming_uniform_(m.weight)
+        elif mode == 'kaiming_normal':
+            torch.nn.init.kaiming_normal_(m.weight)
+        if m.bias is not None:
+            torch.nn.init.constant_(m.bias, 0)
 
 
 class MultiSoftmaxDecoder(NeuralModule):

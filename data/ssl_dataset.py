@@ -22,18 +22,26 @@ from typing import Any, Dict, List, Optional, Union
 
 import numpy as np
 import torch
-from lhotse.dataset import AudioSamples
 from omegaconf import DictConfig, ListConfig, open_dict
 from torch import Tensor
 
-from nemo.collections.asr.data import audio_to_text, audio_to_text_dataset
-from nemo.collections.asr.parts.preprocessing.perturb import WhiteNoisePerturbation, process_augmentations
-from nemo.collections.asr.parts.preprocessing.segment import AudioSegment
-from nemo.collections.asr.parts.utils.manifest_utils import read_manifest
-from nemo.collections.common.data.dataset import ConcatDataset
-from nemo.collections.common.parts.preprocessing.manifest import get_full_path
-from nemo.core.classes import Serialization
-from nemo.utils import logging
+# Optional Lhotse support
+try:
+    from lhotse.dataset import AudioSamples
+    HAVE_LHOTSE = True
+except ImportError:
+    HAVE_LHOTSE = False
+    AudioSamples = None
+
+from data import audio_to_text
+from data import audio_to_text_dataset
+from parts.preprocessing.perturb import process_augmentations
+from parts.preprocessing.segment import AudioSegment
+from parts.utils.manifest_utils import read_manifest
+from common.data.dataset import ConcatDataset
+from common.parts.preprocessing.manifest import get_full_path
+from core.classes.serialization import Serialization
+from utils.logging import get_logger as logging
 
 
 @dataclass
@@ -429,8 +437,13 @@ class TarredAudioNoiseDataset(audio_to_text.TarredAudioToCharDataset):
 
 
 class LhotseAudioNoiseDataset(torch.utils.data.Dataset):
+    """Lhotse-based audio noise dataset. Requires lhotse to be installed."""
+    
     def __init__(self, noise_manifest: str | None = None, batch_augmentor_cfg: DictConfig = None):
         super().__init__()
+        
+        if not HAVE_LHOTSE:
+            raise ImportError("Lhotse is required for LhotseAudioNoiseDataset. Install with: pip install lhotse>=1.31.1")
 
         if batch_augmentor_cfg:
             batch_augmentor = Serialization.from_config_dict(batch_augmentor_cfg)

@@ -16,9 +16,10 @@ import torch
 import torch.nn.functional as F
 from torch import nn
 
-from nemo.core import NeuralModule
-from nemo.core.classes import Exportable, NeuralModule, typecheck
-from nemo.core.neural_types import LabelsType, NeuralType, SpectrogramType
+from core.classes.neural_module import NeuralModule
+from core.classes.exportable import Exportable
+from core.classes.common import typecheck
+from core.neural_types import LabelsType, NeuralType, SpectrogramType
 
 
 class RandomProjectionVectorQuantizer(NeuralModule, Exportable):

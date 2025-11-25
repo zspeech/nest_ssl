@@ -18,10 +18,11 @@ import torch
 import torch.distributed
 import torch.nn as nn
 
-from nemo.collections.asr.modules import AudioToMelSpectrogramPreprocessor, ConformerEncoder
-from nemo.core.classes import Exportable, NeuralModule
-from nemo.core.classes.mixins import AccessMixin
-from nemo.utils import logging
+from modules.audio_preprocessing import AudioToMelSpectrogramPreprocessor
+from modules.conformer_encoder import ConformerEncoder
+from core.classes.neural_module import NeuralModule
+from core.classes.mixins import AccessMixin
+from utils.logging import get_logger as logging
 
 
 class Aggregator(nn.Module):

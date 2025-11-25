@@ -18,7 +18,7 @@ from collections import Counter
 
 import torch
 
-from nemo.collections.asr.data.ssl_dataset import AudioNoiseBatch
+from data.ssl_dataset import AudioNoiseBatch
 
 
 class SpeakerNoiseAugmentation(object):

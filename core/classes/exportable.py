@@ -12,10 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from core.classes.model_pt import ModelPT
-from core.classes.neural_module import NeuralModule
-from core.classes.loss import Loss
-from core.classes.common import typecheck, PretrainedModelInfo
+"""
+Exportable mixin to replace nemo.core.classes.Exportable
+Simplified version - minimal functionality
+"""
 
-__all__ = ['ModelPT', 'NeuralModule', 'Loss', 'typecheck', 'PretrainedModelInfo']
+from abc import ABC
+
+
+class Exportable(ABC):
+    """Mixin class for modules that can be exported."""
+    
+    def export(self, **kwargs):
+        """Export the module. Simplified - not implemented."""
+        raise NotImplementedError("Export functionality not implemented in simplified version")
 

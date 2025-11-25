@@ -28,6 +28,15 @@ einops>=0.6.0  # For tensor operations
 packaging>=21.0
 braceexpand>=0.1.7  # For file path expansion
 
+# Optional: GPU monitoring (for hydra_runner GPU name resolution)
+# pynvml>=11.0.0  # Uncomment if you want GPU name resolution in config
+
+# Optional: Advanced dataset processing
+# lhotse>=1.31.1  # Uncomment if you want to use Lhotse datasets
+
+# Optional: Experiment tracking
+# wandb>=0.15.0  # Uncomment if you want to use Weights & Biases logging
+
 # Development tools (optional)
 # pytest>=7.0.0  # For testing
 # black>=22.0.0  # For code formatting

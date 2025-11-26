@@ -1,12 +1,10 @@
-# 安装说明
+# 安装和使用指南
 
 ## ✅ 重要提示
 
 **本项目已经完全独立于 NeMo 框架，不需要安装 NeMo！**
 
-如果遇到 `megatron_core` 安装错误，这是正常的，因为我们不需要它。
-
-## 快速安装
+## 📦 快速安装
 
 ### 1. 安装基础依赖
 
@@ -21,7 +19,53 @@ pip install -r requirements.txt
 python -c "import torch; import lightning; print('安装成功！')"
 ```
 
-## 依赖说明
+## 🪟 Windows 特殊说明
+
+### Windows 配置优化
+
+本项目已针对 Windows 环境优化，配置文件已设置：
+- `trainer.devices: 1` - Windows 兼容
+- `trainer.strategy: auto` - 避免 DDP 问题
+- `num_workers: 0` - 避免多进程问题
+
+### Windows 运行
+
+```bash
+# 直接运行（已优化配置）
+python train.py
+```
+
+如果遇到问题，可以手动指定参数：
+
+```bash
+python train.py \
+    trainer.devices=1 \
+    trainer.strategy=auto \
+    model.train_ds.num_workers=0 \
+    model.validation_ds.num_workers=0
+```
+
+## 🚀 快速开始
+
+### 1. 准备数据
+
+项目已包含 dummy 测试数据：
+- `data/dummy_ssl/train_manifest.json`
+- `data/dummy_ssl/val_manifest.json`
+
+### 2. 运行训练
+
+```bash
+# 使用默认配置（dummy 数据）
+python train.py
+
+# 指定自己的数据
+python train.py \
+    model.train_ds.manifest_filepath=/path/to/train.json \
+    model.validation_ds.manifest_filepath=/path/to/val.json
+```
+
+## 📋 依赖说明
 
 ### 核心依赖（必须）
 
@@ -29,107 +73,68 @@ python -c "import torch; import lightning; print('安装成功！')"
 - **lightning** >= 2.0.0 - PyTorch Lightning 训练框架
 - **hydra-core** >= 1.3.0 - 配置管理
 - **omegaconf** >= 2.3.0 - 配置解析
-- **librosa** >= 0.10.0 - 音频处理
 - **soundfile** >= 0.12.0 - 音频文件读取
+- **librosa** >= 0.10.0 - 音频处理
 
-### 完整依赖列表
+### 可选依赖
 
-见 `requirements.txt` 文件。
+- **wandb** - 实验跟踪（如果使用 WandB）
+- **tensorboard** - TensorBoard 日志（如果使用 TensorBoard）
 
-## Windows 用户注意事项
+## 🔧 安装 NeMo（仅用于对比）
 
-### 如果遇到编译错误
+如果需要与 NeMo 对比，可以安装 NeMo：
 
-某些包（如 `megatron_core`）在 Windows 上需要 C++ 编译器。**但我们的项目不需要这些包**，可以安全地忽略这些错误。
-
-### 如果遇到音频库问题
-
-```bash
-# 如果 soundfile 安装失败，尝试：
-pip install soundfile --no-binary soundfile
-
-# 或者使用 conda：
-conda install -c conda-forge soundfile
-```
-
-## 可选：安装开发依赖
+### Windows 最小安装（跳过编译问题）
 
 ```bash
-pip install -r requirements-dev.txt
+# 安装核心依赖
+pip install torch torchaudio
+pip install pytorch-lightning hydra-core omegaconf
+
+# 安装 NeMo（跳过编译问题包）
+pip install nemo-toolkit[asr] --no-deps
+pip install nemo-toolkit[all] --no-deps
+
+# 手动安装依赖
+pip install ruamel.yaml tqdm wget packaging
+pip install transformers datasets
 ```
 
-## 验证项目是否正常工作
-
-### 1. 检查导入
+### 使用安装脚本
 
 ```bash
-cd nest_ssl_project
-python -c "from models.ssl_models import EncDecDenoiseMaskedTokenPredModel; print('✓ 模型导入成功')"
+# Windows
+quick_install_nemo.bat
+
+# 或使用 Python 脚本
+python install_nemo_minimal.py
 ```
 
-### 2. 运行 dummy 数据测试
+**注意**: `megatron_core`, `ctc_segmentation`, `texterrors` 等包在 Windows 上可能无法编译，但不影响核心功能。
+
+## ❓ 常见问题
+
+### Q: 内存不足怎么办？
+
+- 减少 `batch_size`
+- 使用梯度累积
+- 启用混合精度训练
+
+### Q: 如何查看训练日志？
+
+训练日志默认保存在 `experiments/` 目录下，或使用 TensorBoard：
 
 ```bash
-cd nest_ssl_project
-python train.py \
-    model.train_ds.manifest_filepath=data/dummy_ssl/train_manifest.json \
-    model.validation_ds.manifest_filepath=data/dummy_ssl/val_manifest.json \
-    trainer.devices=1 \
-    trainer.max_steps=1 \
-    trainer.strategy=auto
+tensorboard --logdir=experiments
 ```
 
-## 如果需要与 NeMo 比较（可选）
+### Q: 支持哪些音频格式？
 
-如果你需要运行 `tools/compare_with_nemo.py` 来比较我们的实现与 NeMo 的差异，可以：
+支持常见的音频格式：WAV、MP3、FLAC、OPUS 等。
 
-### 方法 1: 跳过 megatron_core 安装
+## 📚 相关文档
 
-```bash
-# 只安装 NeMo 的核心部分，跳过 megatron_core
-pip install nemo_toolkit[asr] --no-deps
-pip install -r <(pip show nemo_toolkit | grep Requires | cut -d: -f2 | tr ',' '\n' | grep -v megatron)
-```
-
-### 方法 2: 使用 conda（推荐）
-
-```bash
-conda install -c conda-forge nemo_toolkit
-```
-
-### 方法 3: 在 Linux 上安装（如果有 Linux 环境）
-
-NeMo 在 Linux 上安装更简单，`megatron_core` 可以正常编译。
-
-## 常见问题
-
-### Q: 为什么不需要 NeMo？
-
-A: 我们已经将所有必要的 NeMo 代码提取并本地化了，包括：
-- ✅ ModelPT 基类
-- ✅ ConformerEncoder
-- ✅ AudioToMelSpectrogramPreprocessor
-- ✅ 所有 SSL 模块
-- ✅ 损失函数
-
-### Q: 如果我想使用 NeMo 的 ConformerEncoder 怎么办？
-
-A: 设置环境变量：
-```bash
-set USE_NEMO_CONFORMER=true  # Windows
-# 或
-export USE_NEMO_CONFORMER=true  # Linux/Mac
-```
-
-然后安装 NeMo（可能需要跳过 megatron_core）。
-
-### Q: 安装后仍然报错找不到模块？
-
-A: 确保：
-1. 在 `nest_ssl_project` 目录下运行
-2. Python 路径正确
-3. 所有依赖都已安装
-
-## 下一步
-
-安装完成后，查看 `RUN_NEMO_SSL.md` 了解如何运行训练。
+- [README.md](README.md) - 项目主文档
+- [PROJECT_STRUCTURE_CLEAN.md](PROJECT_STRUCTURE_CLEAN.md) - 项目结构说明
+- [QUICK_REFERENCE.md](QUICK_REFERENCE.md) - 快速参考

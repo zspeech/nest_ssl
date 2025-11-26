@@ -10,7 +10,7 @@
 - ✅ **Windows 优化**: 已针对 Windows 环境优化配置
 - ✅ **功能完整**: 支持完整的 SSL 训练流程
 
-**📊 与 NeMo 对比**: 参见 [STRUCTURE_COMPARISON.md](STRUCTURE_COMPARISON.md)  
+**📊 与 NeMo 对比**: 参见 [COMPARISON.md](COMPARISON.md)  
 **📁 项目结构**: 参见 [PROJECT_STRUCTURE_CLEAN.md](PROJECT_STRUCTURE_CLEAN.md)  
 **🚀 快速参考**: 参见 [QUICK_REFERENCE.md](QUICK_REFERENCE.md)
 
@@ -290,20 +290,10 @@ tensorboard --logdir=nemo_experiments
 
 ## 📚 相关文档
 
-### 🚀 快速开始
-- **[INSTALL.md](INSTALL.md)** - 详细安装指南
-- **[RUN_ON_WINDOWS.md](RUN_ON_WINDOWS.md)** - Windows 运行指南（已优化配置）
-
-### 📁 项目结构
-- **[PROJECT_STRUCTURE_CLEAN.md](PROJECT_STRUCTURE_CLEAN.md)** - 清晰的项目结构说明
-- **[STRUCTURE_COMPARISON.md](STRUCTURE_COMPARISON.md)** - 与 NeMo 的详细结构对比
-
-### 🔍 对比分析
-- **[MODEL_COMPARISON.md](MODEL_COMPARISON.md)** - 模型对比报告
-- **[COMPARISON_SUMMARY.md](COMPARISON_SUMMARY.md)** - 对比总结
-
-### 📖 完整文档索引
-- **[DOCS_INDEX.md](DOCS_INDEX.md)** - 所有文档的索引和导航
+- **[INSTALL.md](INSTALL.md)** - 安装和使用指南（包含 Windows 说明）
+- **[PROJECT_STRUCTURE_CLEAN.md](PROJECT_STRUCTURE_CLEAN.md)** - 项目结构说明
+- **[COMPARISON.md](COMPARISON.md)** - 与 NeMo 的对比分析
+- **[QUICK_REFERENCE.md](QUICK_REFERENCE.md)** - 快速参考
 
 ## 🤝 贡献
 
@@ -327,4 +317,4 @@ tensorboard --logdir=nemo_experiments
 
 ---
 
-**注意**: 本项目仍在开发中，部分功能可能不完整。使用前请仔细阅读 [IMPORTANT_NOTES.md](IMPORTANT_NOTES.md)。
+**注意**: 本项目已完全独立于 NeMo，可以直接使用。如有问题请查看 [INSTALL.md](INSTALL.md)。

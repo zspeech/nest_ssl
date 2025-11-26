@@ -19,8 +19,6 @@ Simplified serialization utilities to replace nemo.core.classes.Serialization
 from typing import Dict, Any
 from omegaconf import DictConfig
 
-from core.classes.neural_module import NeuralModule
-
 
 class Serialization:
     """
@@ -43,17 +41,34 @@ class Serialization:
         if '_target_' in config:
             # Hydra-style instantiation
             target = config['_target_']
+
+            # Remap NeMo targets to local implementations so we don't import nemo.*
+            target_map = {
+                # Preprocessor and encoder
+                'nemo.collections.asr.modules.AudioToMelSpectrogramPreprocessor': 'modules.audio_preprocessing.AudioToMelSpectrogramPreprocessor',
+                'nemo.collections.asr.modules.ConformerEncoder': 'modules.conformer_encoder.ConformerEncoder',
+                # SSL-specific modules
+                'nemo.collections.asr.modules.MultiSoftmaxDecoder': 'modules.ssl_modules.multi_softmax_decoder.MultiSoftmaxDecoder',
+                'nemo.collections.asr.modules.RandomBlockMasking': 'modules.ssl_modules.masking.RandomBlockMasking',
+                'nemo.collections.asr.modules.RandomProjectionVectorQuantizer': 'modules.ssl_modules.quantizers.RandomProjectionVectorQuantizer',
+                # Loss
+                'nemo.collections.asr.losses.MultiMLMLoss': 'losses.ssl_losses.mlm.MultiMLMLoss',
+            }
+
+            # Apply remapping if needed
+            target = target_map.get(target, target)
+
             parts = target.split('.')
             class_name = parts[-1]
             module_path = '.'.join(parts[:-1])
-            
+
             import importlib
             try:
                 module = importlib.import_module(module_path)
                 class_obj = getattr(module, class_name)
             except (ImportError, AttributeError):
                 raise ValueError(f"Could not import {target}")
-            
+
             # Remove _target_ from config
             config = {k: v for k, v in config.items() if k != '_target_'}
             return class_obj(**config)

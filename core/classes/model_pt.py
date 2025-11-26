@@ -101,6 +101,33 @@ class ModelPT(pl.LightningModule, NeuralModule, ABC):
     def set_trainer(self, trainer: Optional[pl.Trainer]):
         """Set the trainer instance."""
         self._trainer = trainer
+
+    def _update_dataset_config(self, dataset_name: str, config: Optional[Union[DictConfig, Dict]]):
+        """
+        Update the config (if not None) of the dataset by given name.
+
+        Simplified version of NeMo's ModelPT._update_dataset_config.
+
+        Args:
+            dataset_name: 'train', 'validation' or 'test'.
+            config: Optional DictConfig or dict. If None is passed, this method simply returns.
+        """
+        if config is None:
+            return
+
+        if not isinstance(config, DictConfig):
+            config = OmegaConf.create(config)
+
+        if dataset_name not in ['train', 'validation', 'test']:
+            raise ValueError("`dataset_name` must be one of ['train', 'validation', 'test']")
+
+        key_name = dataset_name + "_ds"
+
+        # Temporarily disable struct to allow assignment
+        OmegaConf.set_struct(self._cfg, False)
+        self._cfg[key_name] = config
+        OmegaConf.set_struct(self._cfg, True)
+
     
     @classmethod
     def from_config_dict(cls, config: Dict[str, Any]):

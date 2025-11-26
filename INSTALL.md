@@ -101,15 +101,9 @@ pip install ruamel.yaml tqdm wget packaging
 pip install transformers datasets
 ```
 
-### 使用安装脚本
+### 手动安装步骤
 
-```bash
-# Windows
-quick_install_nemo.bat
-
-# 或使用 Python 脚本
-python install_nemo_minimal.py
-```
+按照上面的命令手动安装即可。如果需要自动化脚本，可以参考上面的步骤自行创建。
 
 **注意**: `megatron_core`, `ctc_segmentation`, `texterrors` 等包在 Windows 上可能无法编译，但不影响核心功能。
 

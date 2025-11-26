@@ -17,7 +17,8 @@ Common utilities and classes to replace nemo.core.classes.common
 """
 
 from dataclasses import dataclass
-from typing import Optional, Callable, Any
+from typing import Optional, Callable, Any, Dict
+from abc import ABC
 import functools
 
 
@@ -28,6 +29,23 @@ class PretrainedModelInfo:
     description: str
     location: str
     class_definition: Optional[Any] = None
+
+
+class Typing(ABC):
+    """
+    An interface which endows module with neural types.
+    Simplified version.
+    """
+    
+    @property
+    def input_types(self) -> Optional[Dict[str, Any]]:
+        """Define these to enable input neural type checks"""
+        return None
+    
+    @property
+    def output_types(self) -> Optional[Dict[str, Any]]:
+        """Define these to enable output neural type checks"""
+        return None
 
 
 def typecheck(input_types=None, output_types=None):

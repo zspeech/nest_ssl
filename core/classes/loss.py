@@ -18,7 +18,8 @@ Loss base class to replace nemo.core.classes.loss.Loss
 
 import torch
 
-from core.classes.common import Serialization, Typing
+from core.classes.common import Typing
+from core.classes.serialization import Serialization
 
 __all__ = ['Loss']
 

@@ -15,7 +15,8 @@
 from core.classes.model_pt import ModelPT
 from core.classes.neural_module import NeuralModule
 from core.classes.loss import Loss
-from core.classes.common import typecheck, PretrainedModelInfo
+from core.classes.common import typecheck, PretrainedModelInfo, Typing
+from core.classes.serialization import Serialization
 
-__all__ = ['ModelPT', 'NeuralModule', 'Loss', 'typecheck', 'PretrainedModelInfo']
+__all__ = ['ModelPT', 'NeuralModule', 'Loss', 'typecheck', 'PretrainedModelInfo', 'Typing', 'Serialization']
 

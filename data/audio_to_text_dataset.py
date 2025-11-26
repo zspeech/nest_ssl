@@ -99,6 +99,84 @@ def get_char_dataset(config: dict, augmentor: Optional[Any] = None) -> audio_to_
     return dataset
 
 
+def get_tarred_dataset(
+    config: dict,
+    shuffle_n: int,
+    global_rank: int,
+    world_size: int,
+    augmentor: Optional[Any] = None,
+) -> audio_to_text.TarredAudioToCharDataset:
+    """
+    Instantiates a Character Encoding based TarredAudioToCharDataset.
+    
+    Args:
+        config: Config of the TarredAudioToCharDataset.
+        shuffle_n: How many samples to look ahead and load to be shuffled.
+        global_rank: Global rank of this device.
+        world_size: Global world size in the training method.
+        augmentor: Optional AudioAugmentor object for augmentations on audio data.
+    
+    Returns:
+        An instance of TarredAudioToCharDataset or a ChainDataset of multiple datasets.
+    """
+    tarred_audio_filepaths = config['tarred_audio_filepaths']
+    manifest_filepaths = config['manifest_filepath']
+    
+    # Convert to lists if needed
+    if isinstance(tarred_audio_filepaths, str):
+        tarred_audio_filepaths = [tarred_audio_filepaths]
+    if isinstance(manifest_filepaths, str):
+        manifest_filepaths = [manifest_filepaths]
+    
+    if len(manifest_filepaths) != len(tarred_audio_filepaths):
+        raise ValueError(
+            f"manifest_filepaths (length={len(manifest_filepaths)}) and tarred_audio_filepaths "
+            f"(length={len(tarred_audio_filepaths)}) need to have the same number of buckets."
+        )
+    
+    if 'labels' not in config:
+        logger.warning("dataset does not have explicitly defined labels")
+    
+    if 'max_utts' in config:
+        logger.warning('"max_utts" parameter is not supported for tarred datasets')
+    
+    datasets = []
+    for tarred_audio_filepath, manifest_filepath in zip(tarred_audio_filepaths, manifest_filepaths):
+        # Handle single-item lists
+        if isinstance(tarred_audio_filepath, list) and len(tarred_audio_filepath) == 1:
+            tarred_audio_filepath = tarred_audio_filepath[0]
+        if isinstance(manifest_filepath, list) and len(manifest_filepath) == 1:
+            manifest_filepath = manifest_filepath[0]
+        
+        dataset = audio_to_text.TarredAudioToCharDataset(
+            audio_tar_filepaths=tarred_audio_filepath,
+            manifest_filepath=manifest_filepath,
+            labels=config.get('labels', None),
+            sample_rate=config['sample_rate'],
+            int_values=config.get('int_values', False),
+            augmentor=augmentor,
+            shuffle_n=shuffle_n,
+            max_duration=config.get('max_duration', None),
+            min_duration=config.get('min_duration', None),
+            blank_index=config.get('blank_index', -1),
+            unk_index=config.get('unk_index', -1),
+            normalize=config.get('normalize_transcripts', False),
+            trim=config.get('trim_silence', False),
+            parser=config.get('parser', 'en'),
+            shard_strategy=config.get('tarred_shard_strategy', 'scatter'),
+            shard_manifests=config.get('shard_manifests', False),
+            global_rank=global_rank,
+            world_size=world_size,
+            return_sample_id=config.get('return_sample_id', False),
+        )
+        datasets.append(dataset)
+    
+    if len(datasets) == 1:
+        return datasets[0]
+    else:
+        return get_chain_dataset(datasets=datasets, ds_config=config, rank=global_rank)
+
+
 def get_chain_dataset(datasets, ds_config, rank):
     """
     Create a chain dataset from multiple datasets.

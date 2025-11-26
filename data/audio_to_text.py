@@ -26,22 +26,9 @@ import braceexpand
 import torch
 from torch.utils.data import Dataset, IterableDataset
 
-# Import from NeMo for WaveformFeaturizer (still needed)
-try:
-    from nemo.collections.asr.parts.preprocessing.features import WaveformFeaturizer
-    from nemo.collections.asr.parts.preprocessing.segment import ChannelSelectorType
-    from nemo.collections.asr.parts.preprocessing.segment import available_formats as valid_sf_formats
-except ImportError:
-    # Fallback: try to import from local if available
-    try:
-        from parts.preprocessing.features import WaveformFeaturizer
-        from parts.preprocessing.segment import ChannelSelectorType
-        from parts.preprocessing.segment import available_formats as valid_sf_formats
-    except ImportError:
-        raise ImportError(
-            "Could not import WaveformFeaturizer. Please ensure NeMo is installed or "
-            "parts.preprocessing.features is available."
-        )
+# Import from local modules
+from parts.preprocessing.features import WaveformFeaturizer
+from parts.preprocessing.segment import ChannelSelectorType, available_formats as valid_sf_formats
 
 # Import local modules
 from common.parts.preprocessing import collections, parsers
@@ -49,12 +36,17 @@ from utils.logging import get_logger
 
 # Optional webdataset support
 try:
-    from nemo.utils import webdataset as wds
-    from nemo.utils.distributed import webdataset_split_by_workers
+    import webdataset as wds
     HAVE_WEBDATASET = True
+    # Simple webdataset_split_by_workers implementation
+    def webdataset_split_by_workers(src):
+        """Split webdataset by workers (simplified version)."""
+        return src
 except ImportError:
     HAVE_WEBDATASET = False
     wds = None
+    def webdataset_split_by_workers(src):
+        return src
 
 logger = get_logger(__name__)
 

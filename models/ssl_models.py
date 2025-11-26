@@ -47,9 +47,12 @@ from core.neural_types import (
     NeuralType,
     SpectrogramType,
 )
-from utils.logging import get_logger as logging
+from utils.logging import get_logger
 
 __all__ = ['SpeechEncDecSelfSupervisedModel', 'EncDecMaskedTokenPredModel', 'EncDecDenoiseMaskedTokenPredModel']
+
+
+logging = get_logger(__name__)
 
 
 class SpeechEncDecSelfSupervisedModel(ModelPT, ASRModuleMixin, AccessMixin):

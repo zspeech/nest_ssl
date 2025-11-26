@@ -41,7 +41,7 @@ from parts.utils.manifest_utils import read_manifest
 from common.data.dataset import ConcatDataset
 from common.parts.preprocessing.manifest import get_full_path
 from core.classes.serialization import Serialization
-from utils.logging import get_logger as logging
+from utils.logging import get_logger
 
 
 @dataclass
@@ -64,6 +64,9 @@ class AudioNoiseBatch:
     noise_len: Union[Tensor, None] = None
     noisy_audio: Union[Tensor, None] = None
     noisy_audio_len: Union[Tensor, None] = None
+
+
+logging = get_logger(__name__)
 
 
 def _parse_manifest_item(line: str, manifest_file: str) -> Dict[str, Any]:

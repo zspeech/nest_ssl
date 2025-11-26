@@ -18,7 +18,7 @@ from omegaconf import OmegaConf
 
 # Import local utilities
 from utils.hydra_runner import hydra_runner
-from utils.logging import get_logger as logging
+from utils.logging import get_logger
 from utils.exp_manager import exp_manager
 
 # Import local model
@@ -53,9 +53,12 @@ python train.py \
 """
 
 
+logger = get_logger(__name__)
+
+
 @hydra_runner(config_path="config", config_name="nest_fast-conformer")
 def main(cfg):
-    logging.info(f"Hydra config: {OmegaConf.to_yaml(cfg)}")
+    logger.info(f"Hydra config: {OmegaConf.to_yaml(cfg)}")
 
     trainer = pl.Trainer(**cfg.trainer)
     exp_manager(trainer, cfg.get("exp_manager", None))

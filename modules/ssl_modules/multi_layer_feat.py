@@ -22,7 +22,10 @@ from modules.audio_preprocessing import AudioToMelSpectrogramPreprocessor
 from modules.conformer_encoder import ConformerEncoder
 from core.classes.neural_module import NeuralModule
 from core.classes.mixins import AccessMixin
-from utils.logging import get_logger as logging
+from utils.logging import get_logger
+
+
+logging = get_logger(__name__)
 
 
 class Aggregator(nn.Module):

@@ -1,124 +1,135 @@
-# 安装指南
+# 安装说明
 
-## 系统要求
+## ✅ 重要提示
 
-- Python >= 3.8
-- CUDA >= 11.0 (如果使用 GPU)
-- 足够的磁盘空间用于数据集和模型检查点
+**本项目已经完全独立于 NeMo 框架，不需要安装 NeMo！**
 
-## 安装步骤
+如果遇到 `megatron_core` 安装错误，这是正常的，因为我们不需要它。
 
-### 1. 创建虚拟环境（推荐）
+## 快速安装
 
-```bash
-# 使用 conda
-conda create -n nest_ssl python=3.10
-conda activate nest_ssl
-
-# 或使用 venv
-python -m venv nest_ssl_env
-source nest_ssl_env/bin/activate  # Linux/Mac
-# 或
-nest_ssl_env\Scripts\activate  # Windows
-```
-
-### 2. 安装 PyTorch
-
-根据你的 CUDA 版本安装 PyTorch：
+### 1. 安装基础依赖
 
 ```bash
-# CUDA 11.8
-pip install torch torchaudio --index-url https://download.pytorch.org/whl/cu118
-
-# CUDA 12.1
-pip install torch torchaudio --index-url https://download.pytorch.org/whl/cu121
-
-# CPU only
-pip install torch torchaudio
-```
-
-### 3. 安装项目依赖
-
-```bash
-# 安装核心依赖
+cd nest_ssl_project
 pip install -r requirements.txt
+```
 
-# 或安装开发依赖（包括测试工具）
+### 2. 验证安装
+
+```bash
+python -c "import torch; import lightning; print('安装成功！')"
+```
+
+## 依赖说明
+
+### 核心依赖（必须）
+
+- **torch** >= 2.0.0 - PyTorch 深度学习框架
+- **lightning** >= 2.0.0 - PyTorch Lightning 训练框架
+- **hydra-core** >= 1.3.0 - 配置管理
+- **omegaconf** >= 2.3.0 - 配置解析
+- **librosa** >= 0.10.0 - 音频处理
+- **soundfile** >= 0.12.0 - 音频文件读取
+
+### 完整依赖列表
+
+见 `requirements.txt` 文件。
+
+## Windows 用户注意事项
+
+### 如果遇到编译错误
+
+某些包（如 `megatron_core`）在 Windows 上需要 C++ 编译器。**但我们的项目不需要这些包**，可以安全地忽略这些错误。
+
+### 如果遇到音频库问题
+
+```bash
+# 如果 soundfile 安装失败，尝试：
+pip install soundfile --no-binary soundfile
+
+# 或者使用 conda：
+conda install -c conda-forge soundfile
+```
+
+## 可选：安装开发依赖
+
+```bash
 pip install -r requirements-dev.txt
 ```
 
-### 4. 验证安装
+## 验证项目是否正常工作
+
+### 1. 检查导入
 
 ```bash
-# 测试 PyTorch
-python -c "import torch; print(f'PyTorch version: {torch.__version__}')"
-python -c "import torch; print(f'CUDA available: {torch.cuda.is_available()}')"
-
-# 测试 Lightning
-python -c "import lightning; print(f'Lightning version: {lightning.__version__}')"
-
-# 测试音频处理库
-python -c "import librosa; import soundfile; print('Audio libraries OK')"
-
-# 测试配置管理
-python -c "from omegaconf import DictConfig; from hydra import compose, initialize; print('Config libraries OK')"
+cd nest_ssl_project
+python -c "from models.ssl_models import EncDecDenoiseMaskedTokenPredModel; print('✓ 模型导入成功')"
 ```
+
+### 2. 运行 dummy 数据测试
+
+```bash
+cd nest_ssl_project
+python train.py \
+    model.train_ds.manifest_filepath=data/dummy_ssl/train_manifest.json \
+    model.validation_ds.manifest_filepath=data/dummy_ssl/val_manifest.json \
+    trainer.devices=1 \
+    trainer.max_steps=1 \
+    trainer.strategy=auto
+```
+
+## 如果需要与 NeMo 比较（可选）
+
+如果你需要运行 `tools/compare_with_nemo.py` 来比较我们的实现与 NeMo 的差异，可以：
+
+### 方法 1: 跳过 megatron_core 安装
+
+```bash
+# 只安装 NeMo 的核心部分，跳过 megatron_core
+pip install nemo_toolkit[asr] --no-deps
+pip install -r <(pip show nemo_toolkit | grep Requires | cut -d: -f2 | tr ',' '\n' | grep -v megatron)
+```
+
+### 方法 2: 使用 conda（推荐）
+
+```bash
+conda install -c conda-forge nemo_toolkit
+```
+
+### 方法 3: 在 Linux 上安装（如果有 Linux 环境）
+
+NeMo 在 Linux 上安装更简单，`megatron_core` 可以正常编译。
 
 ## 常见问题
 
-### Q: 安装 PyTorch 时出错
+### Q: 为什么不需要 NeMo？
 
-A: 
-1. 确保 Python 版本 >= 3.8
-2. 检查 CUDA 版本是否匹配
-3. 尝试使用 conda 安装：`conda install pytorch torchaudio -c pytorch`
+A: 我们已经将所有必要的 NeMo 代码提取并本地化了，包括：
+- ✅ ModelPT 基类
+- ✅ ConformerEncoder
+- ✅ AudioToMelSpectrogramPreprocessor
+- ✅ 所有 SSL 模块
+- ✅ 损失函数
 
-### Q: librosa 安装失败
+### Q: 如果我想使用 NeMo 的 ConformerEncoder 怎么办？
 
-A:
-1. 确保已安装系统依赖（如 libsndfile）
-   - Ubuntu/Debian: `sudo apt-get install libsndfile1`
-   - macOS: `brew install libsndfile`
-   - Windows: 通常会自动安装
-2. 如果仍有问题，尝试：`pip install librosa --no-cache-dir`
+A: 设置环境变量：
+```bash
+set USE_NEMO_CONFORMER=true  # Windows
+# 或
+export USE_NEMO_CONFORMER=true  # Linux/Mac
+```
 
-### Q: CUDA 不可用
+然后安装 NeMo（可能需要跳过 megatron_core）。
 
-A:
-1. 检查 CUDA 是否正确安装：`nvidia-smi`
-2. 确保 PyTorch 版本与 CUDA 版本匹配
-3. 可以先用 CPU 版本测试：`pip install torch torchaudio --index-url https://download.pytorch.org/whl/cpu`
+### Q: 安装后仍然报错找不到模块？
 
-### Q: 内存不足
-
-A:
-1. 减少批次大小（batch_size）
-2. 使用梯度累积
-3. 使用混合精度训练（fp16）
-
-## 可选依赖
-
-某些功能可能需要额外的依赖：
-
-- **Lhotse** (可选): 用于高级数据集处理
-  ```bash
-  pip install lhotse>=1.31.1
-  ```
-
-- **DALI** (可选): 用于加速数据加载
-  ```bash
-  pip install --extra-index-url https://developer.download.nvidia.com/compute/redist nvidia-dali-cuda110
-  ```
-
-- **Wandb** (可选): 用于实验跟踪
-  ```bash
-  pip install wandb
-  ```
+A: 确保：
+1. 在 `nest_ssl_project` 目录下运行
+2. Python 路径正确
+3. 所有依赖都已安装
 
 ## 下一步
 
-安装完成后，请查看：
-- `README.md` - 项目概述
-- `QUICK_START.md` - 快速开始指南
-- `config/nest_fast-conformer.yaml` - 配置文件示例
-
+安装完成后，查看 `RUN_NEMO_SSL.md` 了解如何运行训练。

@@ -31,6 +31,14 @@ class AudioAugmentor(ABC):
         pass
 
 
+class NoOpAugmentor(AudioAugmentor):
+    """No-op augmentor that does nothing."""
+    
+    def perturb(self, data):
+        """No-op: return data unchanged."""
+        return data
+
+
 class WhiteNoisePerturbation(AudioAugmentor):
     """Add white noise to audio."""
     

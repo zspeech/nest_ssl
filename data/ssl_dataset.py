@@ -348,6 +348,11 @@ class AudioNoiseDataset(audio_to_text.AudioToCharDataset):
 
     def _collate_fn(self, batch: List[AudioNoiseItem]) -> AudioNoiseBatch:
         return _audio_noise_collate_fn(batch, self.batch_augmentor)
+    
+    @property
+    def collate_fn(self):
+        """Expose collate_fn for DataLoader."""
+        return self._collate_fn
 
 
 class TarredAudioNoiseDataset(audio_to_text.TarredAudioToCharDataset):
@@ -437,6 +442,11 @@ class TarredAudioNoiseDataset(audio_to_text.TarredAudioToCharDataset):
 
     def _collate_fn(self, batch: List[AudioNoiseItem]) -> AudioNoiseBatch:
         return _audio_noise_collate_fn(batch, self.batch_augmentor)
+    
+    @property
+    def collate_fn(self):
+        """Expose collate_fn for DataLoader."""
+        return self._collate_fn
 
 
 class LhotseAudioNoiseDataset(torch.utils.data.Dataset):

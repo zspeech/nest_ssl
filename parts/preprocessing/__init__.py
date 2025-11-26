@@ -18,7 +18,7 @@ Audio preprocessing utilities.
 
 from parts.preprocessing.segment import AudioSegment, ChannelSelectorType, available_formats
 from parts.preprocessing.features import WaveformFeaturizer
-from parts.preprocessing.perturb import AudioAugmentor, process_augmentations
+from parts.preprocessing.perturb import AudioAugmentor, NoOpAugmentor, process_augmentations
 
 __all__ = [
     'AudioSegment',
@@ -26,6 +26,7 @@ __all__ = [
     'available_formats',
     'WaveformFeaturizer',
     'AudioAugmentor',
+    'NoOpAugmentor',
     'process_augmentations',
 ]
 

@@ -13,17 +13,15 @@
 # limitations under the License.
 
 """
-Exportable mixin to replace nemo.core.classes.Exportable
-Simplified version - minimal functionality
+Simplified Exportable mixin to replace nemo.core.classes.exportable.Exportable
 """
 
 from abc import ABC
 
 
 class Exportable(ABC):
-    """Mixin class for modules that can be exported."""
-    
-    def export(self, **kwargs):
-        """Export the module. Simplified - not implemented."""
-        raise NotImplementedError("Export functionality not implemented in simplified version")
-
+    """
+    Mixin for exportable modules.
+    Simplified version - minimal functionality.
+    """
+    pass

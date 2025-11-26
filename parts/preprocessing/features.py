@@ -37,7 +37,8 @@ class WaveformFeaturizer:
             int_values: If True, load samples as 32-bit integers
             augmentor: Optional AudioAugmentor for augmentation
         """
-        self.augmentor = augmentor if augmentor is not None else AudioAugmentor()
+        from parts.preprocessing.perturb import NoOpAugmentor
+        self.augmentor = augmentor if augmentor is not None else NoOpAugmentor()
         self.sample_rate = sample_rate
         self.int_values = int_values
     
@@ -125,7 +126,11 @@ class WaveformFeaturizer:
         if self.augmentor is not None:
             self.augmentor.perturb(audio_segment)
         
-        return torch.tensor(audio_segment.samples, dtype=torch.float)
+        # Use detach().clone() to avoid warning about tensor construction
+        if isinstance(audio_segment.samples, torch.Tensor):
+            return audio_segment.samples.detach().clone().to(dtype=torch.float)
+        else:
+            return torch.tensor(audio_segment.samples, dtype=torch.float)
     
     def _select_channels(self, samples, channel_selector):
         """Select channels from multi-channel audio."""

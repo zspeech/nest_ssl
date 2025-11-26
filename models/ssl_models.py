@@ -222,12 +222,17 @@ class SpeechEncDecSelfSupervisedModel(ModelPT, ASRModuleMixin, AccessMixin):
 
         if hasattr(dataset, 'collate_fn'):
             collate_fn = dataset.collate_fn
-        elif hasattr(dataset.datasets[0], 'collate_fn'):
-            # support datasets that are lists of entries
-            collate_fn = dataset.datasets[0].collate_fn
+        elif hasattr(dataset, 'datasets') and len(dataset.datasets) > 0:
+            # support datasets that are lists of entries (e.g., ConcatDataset)
+            if hasattr(dataset.datasets[0], 'collate_fn'):
+                collate_fn = dataset.datasets[0].collate_fn
+            elif hasattr(dataset.datasets[0], 'datasets') and len(dataset.datasets[0].datasets) > 0:
+                # support datasets that are lists of lists
+                collate_fn = dataset.datasets[0].datasets[0].collate_fn
+            else:
+                collate_fn = None
         else:
-            # support datasets that are lists of lists
-            collate_fn = dataset.datasets[0].datasets[0].collate_fn
+            collate_fn = None
 
         return torch.utils.data.DataLoader(
             dataset=dataset,
@@ -615,8 +620,8 @@ class SpeechEncDecSelfSupervisedModel(ModelPT, ASRModuleMixin, AccessMixin):
 
     def multi_validation_epoch_end(self, outputs, dataloader_idx: int = 0):
         val_loss_mean = torch.stack([x['val_loss'] for x in outputs]).mean()
-        tensorboard_logs = {'val_loss': val_loss_mean}
-        return {'val_loss': val_loss_mean, 'log': tensorboard_logs}
+        # Use self.log() for PyTorch Lightning 2.x compatibility
+        self.log('val_loss', val_loss_mean, on_step=False, on_epoch=True, sync_dist=True)
 
 
 class EncDecMaskedTokenPredModel(SpeechEncDecSelfSupervisedModel):
@@ -824,16 +829,16 @@ class EncDecMaskedTokenPredModel(SpeechEncDecSelfSupervisedModel):
             logging.warning(
                 f'Epoch {self.current_epoch} received no batches for validation dataloader {dataloader_idx}.'
             )
-            return {}
+            return
 
         val_loss_mean = torch.stack(loss_list).mean()
-        tensorboard_logs = {'val_loss': val_loss_mean}
-        return {'val_loss': val_loss_mean, 'log': tensorboard_logs}
+        # Use self.log() for PyTorch Lightning 2.x compatibility
+        self.log('val_loss', val_loss_mean, on_step=False, on_epoch=True, sync_dist=True)
 
     def multi_test_epoch_end(self, outputs, dataloader_idx: int = 0):
         test_loss_mean = torch.stack([x['test_loss'] for x in outputs]).mean()
-        tensorboard_logs = {'test_loss': test_loss_mean}
-        return {'test_loss': test_loss_mean, 'log': tensorboard_logs}
+        # Use self.log() for PyTorch Lightning 2.x compatibility
+        self.log('test_loss', test_loss_mean, on_step=False, on_epoch=True, sync_dist=True)
 
 
 class EncDecDenoiseMaskedTokenPredModel(EncDecMaskedTokenPredModel):
@@ -841,6 +846,12 @@ class EncDecDenoiseMaskedTokenPredModel(EncDecMaskedTokenPredModel):
     Model class that performs denoising and masked token prediction for speech self-supervised learning.
     Please refer to the NEST paper for more details: https://arxiv.org/abs/2408.13106
     """
+
+    def __init__(self, cfg: DictConfig, trainer: Trainer = None):
+        super().__init__(cfg, trainer)
+        # Initialize outputs lists for validation and test
+        self.validation_step_outputs = []
+        self.test_step_outputs = []
 
     @property
     def oomptimizer_schema(self) -> dict:
@@ -882,12 +893,17 @@ class EncDecDenoiseMaskedTokenPredModel(EncDecMaskedTokenPredModel):
 
         if hasattr(dataset, 'collate_fn'):
             collate_fn = dataset.collate_fn
-        elif hasattr(dataset.datasets[0], 'collate_fn'):
-            # support datasets that are lists of entries
-            collate_fn = dataset.datasets[0].collate_fn
+        elif hasattr(dataset, 'datasets') and len(dataset.datasets) > 0:
+            # support datasets that are lists of entries (e.g., ConcatDataset)
+            if hasattr(dataset.datasets[0], 'collate_fn'):
+                collate_fn = dataset.datasets[0].collate_fn
+            elif hasattr(dataset.datasets[0], 'datasets') and len(dataset.datasets[0].datasets) > 0:
+                # support datasets that are lists of lists
+                collate_fn = dataset.datasets[0].datasets[0].collate_fn
+            else:
+                collate_fn = None
         else:
-            # support datasets that are lists of lists
-            collate_fn = dataset.datasets[0].datasets[0].collate_fn
+            collate_fn = None
 
         return torch.utils.data.DataLoader(
             dataset=dataset,
@@ -1034,13 +1050,12 @@ class EncDecDenoiseMaskedTokenPredModel(EncDecMaskedTokenPredModel):
 
         loss_value = self.loss(masks=masks, decoder_outputs=log_probs, targets=tokens, decoder_lengths=encoded_len)
 
-        tensorboard_logs = {
-            'learning_rate': self._optimizer.param_groups[0]['lr'],
-            'global_step': self.trainer.global_step,
-            'train_loss': loss_value,
-        }
+        # Use self.log() for PyTorch Lightning 2.x compatibility
+        self.log('train_loss', loss_value, on_step=True, on_epoch=True, prog_bar=True)
+        if self._optimizer is not None:
+            self.log('learning_rate', self._optimizer.param_groups[0]['lr'], on_step=True, on_epoch=False)
 
-        return {'loss': loss_value, 'log': tensorboard_logs}
+        return loss_value
 
     def inference_pass(
         self,
@@ -1063,3 +1078,43 @@ class EncDecDenoiseMaskedTokenPredModel(EncDecMaskedTokenPredModel):
         loss_value = self.loss(masks=masks, decoder_outputs=log_probs, targets=tokens, decoder_lengths=encoded_len)
 
         return {f'{mode}_loss': loss_value}
+
+    def on_validation_epoch_end(self):
+        """
+        Called at the end of validation epoch.
+        Calls multi_validation_epoch_end for PyTorch Lightning 2.x compatibility.
+        """
+        # Get outputs from validation_step
+        if hasattr(self, 'validation_step_outputs'):
+            if isinstance(self.validation_step_outputs, list):
+                if len(self.validation_step_outputs) > 0:
+                    # Single dataloader case
+                    outputs = self.validation_step_outputs
+                    self.multi_validation_epoch_end(outputs, dataloader_idx=0)
+                    self.validation_step_outputs.clear()
+            elif isinstance(self.validation_step_outputs, dict):
+                # Multiple dataloaders case
+                for dataloader_idx, outputs in self.validation_step_outputs.items():
+                    if len(outputs) > 0:
+                        self.multi_validation_epoch_end(outputs, dataloader_idx=dataloader_idx)
+                self.validation_step_outputs.clear()
+
+    def on_test_epoch_end(self):
+        """
+        Called at the end of test epoch.
+        Calls multi_test_epoch_end for PyTorch Lightning 2.x compatibility.
+        """
+        # Get outputs from test_step
+        if hasattr(self, 'test_step_outputs'):
+            if isinstance(self.test_step_outputs, list):
+                if len(self.test_step_outputs) > 0:
+                    # Single dataloader case
+                    outputs = self.test_step_outputs
+                    self.multi_test_epoch_end(outputs, dataloader_idx=0)
+                    self.test_step_outputs.clear()
+            elif isinstance(self.test_step_outputs, dict):
+                # Multiple dataloaders case
+                for dataloader_idx, outputs in self.test_step_outputs.items():
+                    if len(outputs) > 0:
+                        self.multi_test_epoch_end(outputs, dataloader_idx=dataloader_idx)
+                self.test_step_outputs.clear()

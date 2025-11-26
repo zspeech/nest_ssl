@@ -134,24 +134,10 @@ class ModelPT(pl.LightningModule, NeuralModule, ABC):
         """
         Instantiate a module from a configuration dictionary.
         Supports Hydra-style instantiation with _target_ key.
+        Uses Serialization.from_config_dict for remapping NeMo targets.
         """
-        if isinstance(config, dict) and '_target_' in config:
-            target = config['_target_']
-            parts = target.split('.')
-            class_name = parts[-1]
-            module_path = '.'.join(parts[:-1])
-            
-            import importlib
-            try:
-                module = importlib.import_module(module_path)
-                class_obj = getattr(module, class_name)
-            except (ImportError, AttributeError):
-                raise ValueError(f"Could not import {target}")
-            
-            config = {k: v for k, v in config.items() if k != '_target_'}
-            return class_obj(**config)
-        else:
-            return cls(**config)
+        from core.classes.serialization import Serialization
+        return Serialization.from_config_dict(config)
     
     @abstractmethod
     def setup_training_data(self, train_data_config: Union[DictConfig, Dict]):

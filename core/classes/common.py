@@ -13,50 +13,41 @@
 # limitations under the License.
 
 """
-Common utilities and classes to replace nemo.core.classes.common
+Simplified common utilities to replace nemo.core.classes.common
 """
 
-from dataclasses import dataclass
-from typing import Optional, Callable, Any, Dict
+from functools import wraps
+from typing import Optional, Dict, Any, Callable
 from abc import ABC
-import functools
+
+from core.neural_types import NeuralType
 
 
-@dataclass
-class PretrainedModelInfo:
-    """Information about a pretrained model."""
-    pretrained_model_name: str
-    description: str
-    location: str
-    class_definition: Optional[Any] = None
-
-
-class Typing(ABC):
+def typecheck():
     """
-    An interface which endows module with neural types.
-    Simplified version.
+    Decorator for type checking (simplified - no-op for now).
     """
-    
-    @property
-    def input_types(self) -> Optional[Dict[str, Any]]:
-        """Define these to enable input neural type checks"""
-        return None
-    
-    @property
-    def output_types(self) -> Optional[Dict[str, Any]]:
-        """Define these to enable output neural type checks"""
-        return None
-
-
-def typecheck(input_types=None, output_types=None):
-    """
-    Decorator for type checking. Simplified version - just returns the function.
-    In a full implementation, this would perform actual type checking.
-    """
-    def decorator(func: Callable) -> Callable:
-        @functools.wraps(func)
+    def decorator(func):
+        @wraps(func)
         def wrapper(*args, **kwargs):
             return func(*args, **kwargs)
         return wrapper
     return decorator
 
+
+class Typing(ABC):
+    @property
+    def input_types(self) -> Optional[Dict[str, NeuralType]]:
+        return None
+    
+    @property
+    def output_types(self) -> Optional[Dict[str, NeuralType]]:
+        return None
+
+
+class PretrainedModelInfo:
+    """Information about a pretrained model."""
+    def __init__(self, pretrained_model_name: str, description: str, location: str):
+        self.pretrained_model_name = pretrained_model_name
+        self.description = description
+        self.location = location

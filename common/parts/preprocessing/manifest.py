@@ -22,6 +22,28 @@ from typing import Iterator, List, Union, Optional, Dict, Any, Callable
 from pathlib import Path
 
 
+def _find_project_root() -> Optional[Path]:
+    """Find the nest_ssl_project root directory by looking for train.py."""
+    current = Path.cwd()
+    
+    # Check current directory
+    if (current / "train.py").exists():
+        return current
+    
+    # Check nest_ssl_project subdirectory
+    if (current / "nest_ssl_project" / "train.py").exists():
+        return current / "nest_ssl_project"
+    
+    # Check parent directories
+    for parent in current.parents:
+        if (parent / "nest_ssl_project" / "train.py").exists():
+            return parent / "nest_ssl_project"
+        elif (parent / "train.py").exists():
+            return parent
+    
+    return None
+
+
 def item_iter(
     manifests_files: Union[str, List[str]],
     parse_func: Optional[Callable[[str, Optional[str]], Dict[str, Any]]] = None
@@ -40,10 +62,56 @@ def item_iter(
         manifests_files = [manifests_files]
     
     for manifest_file in manifests_files:
-        manifest_file = Path(manifest_file).expanduser().resolve()
+        # Convert to Path and expand user home directory
+        manifest_path = Path(manifest_file).expanduser()
+        
+        # If relative path, try multiple locations
+        if not manifest_path.is_absolute():
+            tried_paths = []
+            resolved_path = None
+            
+            # Try 1: Current working directory
+            cwd_path = Path.cwd() / manifest_path
+            tried_paths.append(str(cwd_path))
+            if cwd_path.exists():
+                resolved_path = cwd_path.resolve()
+            else:
+                # Try 2: Relative to project root (nest_ssl_project)
+                project_root = _find_project_root()
+                if project_root:
+                    project_path = project_root / manifest_path
+                    tried_paths.append(str(project_path))
+                    if project_path.exists():
+                        resolved_path = project_path.resolve()
+                
+                # Try 3: Relative to current directory (last resort)
+                if resolved_path is None:
+                    resolved_path = manifest_path.resolve()
+                    tried_paths.append(str(resolved_path))
+            
+            manifest_file = str(resolved_path) if resolved_path else str(manifest_path.resolve())
+        else:
+            manifest_file = str(manifest_path.resolve())
+        
+        manifest_file = Path(manifest_file)
         
         if not manifest_file.exists():
-            raise FileNotFoundError(f"Manifest file not found: {manifest_file}")
+            # Provide helpful error message
+            cwd = Path.cwd()
+            project_root = _find_project_root()
+            
+            tried_paths = [str(cwd / manifest_path)]
+            if project_root:
+                tried_paths.append(str(project_root / manifest_path))
+            
+            raise FileNotFoundError(
+                f"Manifest file not found: {manifest_file}\n"
+                f"Original path: {manifest_file}\n"
+                f"Current working directory: {cwd}\n"
+                f"Project root: {project_root}\n"
+                f"Tried paths:\n" + "\n".join(f"  - {p}" for p in tried_paths) + "\n"
+                f"Please ensure the manifest file exists or provide an absolute path."
+            )
         
         with open(manifest_file, 'r', encoding='utf-8') as f:
             for line in f:

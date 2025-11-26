@@ -43,20 +43,39 @@ class Serialization:
             target = config['_target_']
 
             # Remap NeMo targets to local implementations so we don't import nemo.*
+            # Set USE_NEMO_CONFORMER=True to use NeMo's ConformerEncoder directly
+            # This can be set via environment variable: USE_NEMO_CONFORMER=true
+            import os
+            USE_NEMO_CONFORMER = os.getenv('USE_NEMO_CONFORMER', 'false').lower() == 'true'
+            
             target_map = {
                 # Preprocessor and encoder
                 'nemo.collections.asr.modules.AudioToMelSpectrogramPreprocessor': 'modules.audio_preprocessing.AudioToMelSpectrogramPreprocessor',
-                'nemo.collections.asr.modules.ConformerEncoder': 'modules.conformer_encoder.ConformerEncoder',
+                'nemo.collections.asr.modules.SpectrogramAugmentation': 'modules.audio_preprocessing.SpectrogramAugmentation',
                 # SSL-specific modules
+                'nemo.collections.asr.modules.ssl_modules.MultiSpeakerNoiseAugmentation': 'modules.ssl_modules.augmentation.MultiSpeakerNoiseAugmentation',
                 'nemo.collections.asr.modules.MultiSoftmaxDecoder': 'modules.ssl_modules.multi_softmax_decoder.MultiSoftmaxDecoder',
                 'nemo.collections.asr.modules.RandomBlockMasking': 'modules.ssl_modules.masking.RandomBlockMasking',
                 'nemo.collections.asr.modules.RandomProjectionVectorQuantizer': 'modules.ssl_modules.quantizers.RandomProjectionVectorQuantizer',
                 # Loss
                 'nemo.collections.asr.losses.MultiMLMLoss': 'losses.ssl_losses.mlm.MultiMLMLoss',
             }
+            
+            # Optionally use NeMo's ConformerEncoder directly
+            if not USE_NEMO_CONFORMER:
+                target_map['nemo.collections.asr.modules.ConformerEncoder'] = 'modules.conformer_encoder.ConformerEncoder'
 
             # Apply remapping if needed
+            original_target = target
             target = target_map.get(target, target)
+            
+            # Check if remapping failed (still contains nemo) - but allow NeMo imports if explicitly requested
+            if 'nemo' in target and not USE_NEMO_CONFORMER:
+                raise ValueError(
+                    f"Target '{original_target}' was not remapped and still contains 'nemo'. "
+                    f"Please add it to the target_map in serialization.py or create the local implementation. "
+                    f"Alternatively, set USE_NEMO_CONFORMER=true to use NeMo's ConformerEncoder directly."
+                )
 
             parts = target.split('.')
             class_name = parts[-1]
@@ -66,8 +85,16 @@ class Serialization:
             try:
                 module = importlib.import_module(module_path)
                 class_obj = getattr(module, class_name)
-            except (ImportError, AttributeError):
-                raise ValueError(f"Could not import {target}")
+            except ImportError as e:
+                raise ValueError(
+                    f"Could not import module '{module_path}' for target '{original_target}' -> '{target}'. "
+                    f"Original error: {e}"
+                )
+            except AttributeError as e:
+                raise ValueError(
+                    f"Could not find class '{class_name}' in module '{module_path}' for target '{original_target}' -> '{target}'. "
+                    f"Original error: {e}"
+                )
 
             # Remove _target_ from config
             config = {k: v for k, v in config.items() if k != '_target_'}

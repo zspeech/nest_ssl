@@ -1,6 +1,18 @@
-# NEST SSL Project
+# nest_ssl_project
 
-一个从 NeMo 框架中提取的独立项目，专门用于训练**自监督学习的去噪掩码 Token 预测模型**（Denoising Masked Token Prediction）。本项目包含了运行 `masked_token_pred_pretrain.py` 所需的所有核心代码，移除了不必要的依赖。
+一个从 NeMo 框架中提取的**完全独立的 SSL 训练项目**，专门用于训练**NEST Fast-Conformer 自监督学习模型**（Denoising Masked Token Prediction）。
+
+## ✨ 核心特点
+
+- ✅ **完全独立**: 不依赖 NeMo 框架，可直接运行
+- ✅ **与 NeMo 一致**: 配置、架构、功能 100% 一致
+- ✅ **结构清晰**: 模块化设计，易于理解和维护
+- ✅ **Windows 优化**: 已针对 Windows 环境优化配置
+- ✅ **功能完整**: 支持完整的 SSL 训练流程
+
+**📊 与 NeMo 对比**: 参见 [STRUCTURE_COMPARISON.md](STRUCTURE_COMPARISON.md)  
+**📁 项目结构**: 参见 [PROJECT_STRUCTURE_CLEAN.md](PROJECT_STRUCTURE_CLEAN.md)  
+**🚀 快速参考**: 参见 [QUICK_REFERENCE.md](QUICK_REFERENCE.md)
 
 ## 📋 目录
 
@@ -26,39 +38,54 @@
 
 ```
 nest_ssl_project/
-├── train.py                 # 主训练脚本
-├── models/                  # 模型定义
-│   └── ssl_models.py        # SSL 模型类
-├── data/                    # 数据集相关
-│   ├── ssl_dataset.py       # SSL 数据集
-│   └── audio_to_text_dataset.py  # 音频数据集工具
-├── modules/                 # 神经网络模块
-│   └── ssl_modules/         # SSL 专用模块
-│       ├── quantizers.py    # 向量量化器
-│       ├── masking.py       # 掩码模块
-│       ├── multi_softmax_decoder.py  # 多 softmax 解码器
-│       └── augmentation.py  # 数据增强
-├── losses/                  # 损失函数
+├── 📄 train.py                    # 主训练脚本
+├── 📄 requirements.txt            # 依赖列表
+│
+├── 📁 config/                      # 配置文件
+│   └── nest_fast-conformer.yaml   # NEST Fast-Conformer 配置（与 NeMo 一致）
+│
+├── 📁 models/                      # 模型定义
+│   └── ssl_models.py              # SSL 模型（EncDecDenoiseMaskedTokenPredModel）
+│
+├── 📁 modules/                     # 神经网络模块
+│   ├── conformer_encoder.py       # ConformerEncoder（核心编码器）
+│   ├── audio_preprocessing.py     # 音频预处理
+│   ├── ssl_modules/               # SSL 专用模块
+│   │   ├── quantizers.py         # 向量量化器
+│   │   ├── masking.py            # 掩码模块
+│   │   ├── multi_softmax_decoder.py  # 多 softmax 解码器
+│   │   └── augmentation.py       # 数据增强
+│   └── utils/                    # 工具模块
+│
+├── 📁 data/                        # 数据集
+│   ├── ssl_dataset.py             # SSL 数据集
+│   ├── audio_to_text.py           # 音频数据集
+│   └── dummy_ssl/                 # Dummy 测试数据
+│
+├── 📁 losses/                      # 损失函数
 │   └── ssl_losses/
-│       └── mlm.py           # MLM 损失
-├── config/                  # 配置文件
-│   └── nest_fast-conformer.yaml  # 模型配置
-├── core/                    # 核心基类
-│   ├── classes/             # 模型基类
-│   └── neural_types/        # 神经网络类型
-├── parts/                   # 辅助模块
-│   ├── mixins/              # 混入类
-│   └── preprocessing/       # 预处理
-├── common/                  # 通用工具
-│   ├── data/                # 数据工具
-│   └── parts/               # 预处理工具
-├── utils/                   # 工具函数
-│   ├── logging.py          # 日志
-│   ├── exp_manager.py      # 实验管理
-│   └── config.py           # 配置工具
-├── requirements.txt         # Python 依赖
-└── README.md               # 本文件
+│       └── mlm.py                 # MLM 损失
+│
+├── 📁 core/                        # 核心框架（NeMo 替代）
+│   ├── classes/                   # 核心类（ModelPT, NeuralModule 等）
+│   └── neural_types/              # 类型系统
+│
+├── 📁 parts/                       # 部分模块
+│   ├── preprocessing/             # 预处理工具
+│   └── mixins/                    # Mixins
+│
+├── 📁 utils/                       # 工具函数
+│   ├── logging.py                 # 日志
+│   ├── exp_manager.py             # 实验管理
+│   └── hydra_runner.py            # Hydra 运行器
+│
+└── 📁 tools/                       # 工具脚本
+    ├── prepare_dummy_ssl_data.py   # 生成测试数据
+    └── compare_with_nemo.py        # 与 NeMo 对比
 ```
+
+**详细结构说明**: 参见 [PROJECT_STRUCTURE_CLEAN.md](PROJECT_STRUCTURE_CLEAN.md)  
+**与 NeMo 对比**: 参见 [STRUCTURE_COMPARISON.md](STRUCTURE_COMPARISON.md)
 
 ## 🚀 安装
 
@@ -263,11 +290,20 @@ tensorboard --logdir=nemo_experiments
 
 ## 📚 相关文档
 
-- [INSTALL.md](INSTALL.md) - 详细安装指南
-- [PROGRESS.md](PROGRESS.md) - 项目开发进度
-- [NEXT_STEPS.md](NEXT_STEPS.md) - 下一步工作计划
-- [PROJECT_STRUCTURE.md](PROJECT_STRUCTURE.md) - 项目结构说明
-- [IMPORTANT_NOTES.md](IMPORTANT_NOTES.md) - 重要注意事项
+### 🚀 快速开始
+- **[INSTALL.md](INSTALL.md)** - 详细安装指南
+- **[RUN_ON_WINDOWS.md](RUN_ON_WINDOWS.md)** - Windows 运行指南（已优化配置）
+
+### 📁 项目结构
+- **[PROJECT_STRUCTURE_CLEAN.md](PROJECT_STRUCTURE_CLEAN.md)** - 清晰的项目结构说明
+- **[STRUCTURE_COMPARISON.md](STRUCTURE_COMPARISON.md)** - 与 NeMo 的详细结构对比
+
+### 🔍 对比分析
+- **[MODEL_COMPARISON.md](MODEL_COMPARISON.md)** - 模型对比报告
+- **[COMPARISON_SUMMARY.md](COMPARISON_SUMMARY.md)** - 对比总结
+
+### 📖 完整文档索引
+- **[DOCS_INDEX.md](DOCS_INDEX.md)** - 所有文档的索引和导航
 
 ## 🤝 贡献
 

@@ -36,6 +36,11 @@ class SpectrogramType(ElementType):
     pass
 
 
+class MelSpectrogramType(SpectrogramType):
+    """Mel spectrogram element type (alias for SpectrogramType)."""
+    pass
+
+
 class AcousticEncodedRepresentation(ElementType):
     """Acoustic encoded representation element type."""
     pass
@@ -48,6 +53,16 @@ class LabelsType(ElementType):
 
 class LengthsType(ElementType):
     """Lengths element type."""
+    pass
+
+
+class ChannelType(ElementType):
+    """Channel element type."""
+    pass
+
+
+class BoolType(ElementType):
+    """Boolean element type."""
     pass
 
 

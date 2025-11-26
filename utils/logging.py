@@ -53,3 +53,6 @@ _logging.basicConfig(
 # Create module-like object
 logging = LoggingModule()
 
+# Export for compatibility with nemo.utils.logging
+__all__ = ['get_logger', 'logging']
+

@@ -105,3 +105,70 @@ def __parse_item(line: str, manifest_file: str) -> Dict[str, Any]:
     )
     
     return item
+
+
+def get_full_path(
+    audio_file: Union[str, List[str]],
+    manifest_file: Optional[str] = None,
+    data_dir: Optional[str] = None,
+    audio_file_len_limit: int = 255,
+) -> Union[str, List[str]]:
+    """
+    Get full path to audio_file.
+    
+    If the audio_file is a relative path and does not exist,
+    try to attach the parent directory of manifest to the audio path.
+    Revert to the original path if the new path still doesn't exist.
+    Assume that the audio path is like "wavs/xxxxxx.wav".
+    
+    Args:
+        audio_file: path to an audio file, either absolute or assumed relative
+                    to the manifest directory or data directory.
+                    Alternatively, a list of paths may be provided.
+        manifest_file: path to a manifest file
+        data_dir: path to a directory containing data, use only if a manifest file is not provided
+        audio_file_len_limit: limit for length of audio_file when using relative paths
+    
+    Returns:
+        Full path to audio_file or a list of paths.
+    """
+    if isinstance(audio_file, list):
+        return [get_full_path(audio_file=af, manifest_file=manifest_file, data_dir=data_dir, audio_file_len_limit=audio_file_len_limit) for af in audio_file]
+    
+    if isinstance(audio_file, str):
+        # If already absolute and exists, return as is
+        if os.path.isabs(audio_file) and os.path.isfile(audio_file):
+            return os.path.abspath(audio_file)
+        
+        # If path is too long, assume it's already a full path
+        if len(audio_file) >= audio_file_len_limit:
+            return os.path.abspath(os.path.expanduser(audio_file))
+        
+        # If not absolute and path is short, try to resolve relative to manifest or data_dir
+        if not os.path.isabs(audio_file):
+            if manifest_file is None and data_dir is None:
+                raise ValueError('Use either manifest_file or data_dir to specify the data directory.')
+            elif manifest_file is not None and data_dir is not None:
+                raise ValueError(
+                    f'Parameters manifest_file and data_dir cannot be used simultaneously. '
+                    f'Currently manifest_file is {manifest_file} and data_dir is {data_dir}.'
+                )
+            
+            # Resolve the data directory
+            if data_dir is None:
+                data_dir = os.path.dirname(manifest_file)
+            
+            # Assume audio_file path is relative to data_dir
+            audio_file_path = os.path.join(data_dir, audio_file)
+            
+            if os.path.isfile(audio_file_path):
+                audio_file = os.path.abspath(audio_file_path)
+            else:
+                # Try expanding user home directory
+                audio_file = os.path.abspath(os.path.expanduser(audio_file))
+        else:
+            audio_file = os.path.abspath(os.path.expanduser(audio_file))
+        
+        return audio_file
+    else:
+        raise ValueError(f'Unexpected audio_file type {type(audio_file)}, audio_file {audio_file}.')
